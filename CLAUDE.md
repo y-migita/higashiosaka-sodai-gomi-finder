@@ -18,6 +18,8 @@ bun run search "<検索語>"    # 検索。既定はJSON出力（LLM利用前提
 
 ## データ（`data/categories.json` / `data/items.json`）
 
+出典: **東大阪市大型ごみインターネット受付**（東大阪市公式。https://www.ogomi-higashiosaka.jp/eco/view/higashiosaka/top.html ）の品目情報。同サイトは大型ごみの収集申込み・品目検索を提供する公式サービスで、本CLIはその品目データをローカル検索用に取り込んだもの。
+
 - `data/categories.json`（10件）= 分類マスタ。`classId`(1–10) → `className`。
 - `data/items.json`（248件）= 品目。1件28フィールドだが**意味があるのは下記のみ**。
 
