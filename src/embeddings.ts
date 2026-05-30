@@ -1,4 +1,5 @@
 import { cosineSimilarity, embed, embedMany } from "ai";
+import { err as c } from "./term.ts";
 
 /**
  * 埋め込みモデル。"プロバイダ/モデル名" の文字列を渡すと
@@ -23,9 +24,11 @@ export { cosineSimilarity };
 /** AI_GATEWAY_API_KEY が無ければ案内して終了する */
 export function requireApiKey(): void {
   if (!process.env.AI_GATEWAY_API_KEY) {
-    console.error("✖ 環境変数 AI_GATEWAY_API_KEY が未設定です。");
+    console.error(c.red("✖ 環境変数 AI_GATEWAY_API_KEY が未設定です。"));
     console.error(
-      "  .env に AI_GATEWAY_API_KEY=... を記入してください（Vercel AI Gateway の APIキー）。",
+      c.gray(
+        "  .env に AI_GATEWAY_API_KEY=... を記入してください（Vercel AI Gateway の APIキー）。",
+      ),
     );
     process.exit(1);
   }

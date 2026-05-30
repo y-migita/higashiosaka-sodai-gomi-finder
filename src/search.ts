@@ -8,6 +8,7 @@
 import { cosineSimilarity, embedOne, requireApiKey } from "./embeddings.ts";
 import { normalize } from "./normalize.ts";
 import { DATA } from "./data.ts";
+import { err, out, table } from "./term.ts";
 import type { IndexedItem, IndexFile } from "./types.ts";
 
 const INDEX = `${DATA}/index.json`;
@@ -59,14 +60,14 @@ async function main() {
   const { query, k, pretty } = parseArgs(Bun.argv);
 
   if (!query) {
-    console.error('使い方: bun run search "<検索語>" [--k 5] [--pretty]');
+    console.error(err.gray('使い方: bun run search "<検索語>" [--k 5] [--pretty]'));
     process.exit(1);
   }
 
   const file = Bun.file(INDEX);
   if (!(await file.exists())) {
     console.error(
-      "✖ index.json がありません。先に `bun run index` を実行してください。",
+      err.red("✖ index.json がありません。先に `bun run index` を実行してください。"),
     );
     process.exit(1);
   }
@@ -100,13 +101,50 @@ async function main() {
   }));
 
   if (pretty) {
-    console.log(`\n🔎 「${query}」の検索結果（上位${results.length}件）\n`);
-    results.forEach((r, i) => {
-      console.log(`${i + 1}. ${r.name}  ［${r.category}］`);
+    const c = out;
+    const MATCH: Record<string, { label: string; color: (s: string) => string }> = {
+      exact: { label: "完全一致", color: c.green },
+      prefix: { label: "前方一致", color: c.cyan },
+      partial: { label: "部分一致", color: c.yellow },
+      semantic: { label: "意味", color: c.gray },
+    };
+
+    if (results.length === 0) {
       console.log(
-        `   ${r.priceYen}円（処理券 ${r.ticket}） / dustCode=${r.dustCode} / score=${r.score}（${r.match}）`,
+        "\n" + c.bold(c.cyan(`🔎 「${query}」`)) + c.gray(" — 該当なし") + "\n",
       );
+      return;
+    }
+
+    console.log(
+      "\n" +
+        c.bold(c.cyan(`🔎 「${query}」`)) +
+        c.gray(` — 上位${results.length}件`) +
+        "\n",
+    );
+    const head = ["#", "品目", "分類", "料金", "処理券", "スコア", "一致"];
+    const align: ("left" | "right")[] = [
+      "right",
+      "left",
+      "left",
+      "right",
+      "left",
+      "right",
+      "left",
+    ];
+    const rows = results.map((r, i) => {
+      const m = MATCH[r.match] ?? { label: r.match, color: c.gray };
+      return [
+        c.gray(String(i + 1)),
+        c.bold(c.cyan(r.name)),
+        c.gray(r.category),
+        `${r.priceYen}円`,
+        r.ticket,
+        r.score.toFixed(3),
+        m.color(m.label),
+      ];
     });
+    console.log(table(head, rows, align));
     console.log("");
   } else {
     console.log(JSON.stringify({ query, count: results.length, results }, null, 2));
@@ -114,6 +152,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error("✖ 検索に失敗:", e?.message ?? e);
+  console.error(err.red(`✖ 検索に失敗: ${e?.message ?? e}`));
   process.exit(1);
 });
